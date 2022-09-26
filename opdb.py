@@ -1,3 +1,5 @@
+import bdb
+import inspect
 import opcode
 from dis import opname, HAVE_ARGUMENT, hasconst, hasname, hasjrel, haslocal, hascompare, cmp_op
 from pdb import Pdb
@@ -71,6 +73,128 @@ class OPdb(Pdb):
         for i in range(size):
             stack.append(pystack.getStackItem(self.curframe, i))
         logger.info("[stack] {}".format(stack))
+
+    def do_inspect_frame(self, arg):
+        logger.debug('[debug] inspect frame')
+        logger.info(inspect.getmembers(self.curframe))
+
+    def do_list_locals(self, arg):
+        print('[locals]')
+        for k, v in self.curframe.f_locals.items():
+            if k not in self.fake_locals:
+                print(k, '=', v)
+
+    do_ll = do_list_locals
+
+    def do_list_globals(self, arg):
+        print('[globals]')
+        for k, v in self.curframe.f_globals.items():
+            if k not in self.fake_globals:
+                print(k, '=', v)
+
+    do_lg = do_list_globals
+
+    def do_break(self, arg, temporary=0):
+        if not arg:
+            if self.breaks:  # There's at least one
+                print("Num Type         Disp Enb   Where")
+                for bp in bdb.Breakpoint.bpbynumber:
+                    if bp:
+                        bp.bpprint(self.stdout)
+            return
+        # parse arguments; comma has lowest precedence
+        # and cannot occur in filename
+        filename = None
+        lineno = None
+        cond = None
+        comma = arg.find(',')
+        if comma > 0:
+            # parse stuff after comma: "condition"
+            cond = arg[comma + 1:].lstrip()
+            arg = arg[:comma].rstrip()
+        # parse stuff before comma: [filename:]lineno | function
+        colon = arg.rfind(':')
+        funcname = None
+        if colon >= 0:
+            filename = arg[:colon].rstrip()
+            f = self.lookupmodule(filename)
+            if not f:
+                print(self.stdout, '*** ', repr(filename))
+                print(self.stdout, 'not found from sys.path')
+                return
+            else:
+                filename = f
+            arg = arg[colon + 1:].lstrip()
+            try:
+                lineno = int(arg)
+            except ValueError as msg:
+                print(self.stdout, '*** Bad lineno:', arg)
+                return
+        else:
+            # no colon; can be lineno or function
+            try:
+                lineno = int(arg)
+            except ValueError:
+                try:
+                    func = eval(arg,
+                                self.curframe.f_globals,
+                                self.curframe_locals)
+                except:
+                    func = arg
+                try:
+                    if hasattr(func, 'im_func'):
+                        func = func.im_func
+                    code = func.func_code
+                    # use co_name to identify the bkpt (function names
+                    # could be aliased, but co_name is invariant)
+                    funcname = code.co_name
+                    lineno = code.co_firstlineno
+                    filename = code.co_filename
+                except:
+                    # last thing to try
+                    (ok, filename, ln) = self.lineinfo(arg)
+                    if not ok:
+                        print('*** The specified object')
+                        print(repr(arg))
+                        print('is not a function')
+                        print('or was not found along sys.path.')
+                        return
+                    funcname = ok  # ok contains a function name
+                    lineno = int(ln)
+        if not filename:
+            filename = self.defaultFile()
+        # Check for reasonable breakpoint
+        # line = self.checkline(filename, lineno)
+        line = lineno
+        if line:
+            # now set the break point
+            # err = self.set_break(filename, line, temporary, cond, funcname)
+
+            filename = self.canonic(filename)
+            import linecache  # Import as late as possible
+            # line = linecache.getline(filename, lineno)
+            # if not line:
+            #     err = 'Line %s:%d does not exist' % (filename,
+            #                                           lineno)
+            if not filename in self.breaks:
+                self.breaks[filename] = []
+            list = self.breaks[filename]
+            if not lineno in list:
+                list.append(lineno)
+            bp = bdb.Breakpoint(filename, lineno, temporary, cond, funcname)
+
+            # if err: print >>self.stdout, '***', err
+            # else:
+            bp = self.get_breaks(filename, line)[-1]
+            print("Breakpoint %d at %s:%d" % (bp.number,
+                                              bp.file,
+                                              bp.line))
+
+    do_b = do_break
+
+    def do_break_until(self, arg):
+        self.clear_all_breaks()
+        return self.do_break(arg)
 
 
 def disassemble_string(code, lasti=-1, varnames=None, names=None, constants=None):
