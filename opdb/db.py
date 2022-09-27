@@ -4,17 +4,27 @@ import opcode
 from dis import opname, HAVE_ARGUMENT, hasconst, hasname, hasjrel, haslocal, hascompare, cmp_op
 from pdb import Pdb
 import pystack
-from log import logger
+from opdb.log import logger
 
-import deobfuscator
-import util
-from lib.lnotab import lnotab_all
+from opdb import deobfuscator
+from opdb import util
+from opdb.lib.lnotab import lnotab_all
 
 
 # noinspection PyShadowingBuiltins
 def run(statement, fake_globals, fake_locals, globals=None, locals=None):
     new_code_object = lnotab_all(statement)
     OPdb(new_code_object.co_filename, fake_globals, fake_locals).run(new_code_object, globals, locals)
+
+
+def static_analysis(code, varnames, names, constants):
+    i = 0
+    while i < len(code):
+        op = util.load_op(code, i)
+        oparg, next_i = util.load_op_arg(op, code, i)
+        disassemble_string(code[i:next_i], i, varnames, names, constants)
+
+        i = next_i
 
 
 class OPdb(Pdb):
@@ -36,6 +46,8 @@ class OPdb(Pdb):
             self.do_stack(arg)
             op = util.load_op(code, lasti)
             _, lasti_end = util.load_op_arg(op, code, lasti)
+            logger.info("[predict]")
+            disassemble_string(code[lasti_end:lasti_end + 2], lasti_end, varnames, names, constants)
             if op < opcode.HAVE_ARGUMENT:
                 disassemble_string(code[lasti:lasti_end], lasti, varnames, names, constants)
                 Pdb.do_step(self, arg)
@@ -204,7 +216,7 @@ def disassemble_string(code, lasti=-1, varnames=None, names=None, constants=None
         c = code[i]
         op = util.load_op(code, i)
         # print(repr(i + lasti).rjust(4), opname[op].ljust(15))
-        oparg, i = util.load_op_arg(op, code, i)
+        oparg, next_i = util.load_op_arg(op, code, i)
         info = "{} {} {}".format(i + lasti, opname[op], oparg)
         # i = i + 1
         if op >= HAVE_ARGUMENT:
@@ -217,14 +229,14 @@ def disassemble_string(code, lasti=-1, varnames=None, names=None, constants=None
                     info += " ({}) ".format(repr(constants[oparg]))
                 else:
                     # print('(%d)' % oparg)
-                    info += "%d".format(oparg)
+                    info += "{}".format(oparg)
             elif op in hasname:
                 if names is not None:
                     # print('(' + names[oparg] + ')')
                     info += '(' + names[oparg] + ')'
                 else:
                     # print('(%d)' % oparg)
-                    info += "%d".format(oparg)
+                    info += "{}".format(oparg)
             elif op in hasjrel:
                 # print('(to ' + repr(i + lasti + oparg) + ')')
                 info += '(to ' + repr(i + lasti + oparg) + ')'
@@ -234,9 +246,10 @@ def disassemble_string(code, lasti=-1, varnames=None, names=None, constants=None
                     info += '(' + varnames[oparg] + ')'
                 else:
                     # print('(%d)' % oparg)
-                    info += "%d".format(oparg)
+                    info += "{}".format(oparg)
             elif op in hascompare:
                 # print('(' + cmp_op[oparg] + ')')
                 info += '(' + cmp_op[oparg] + ')'
         # print()
         logger.info(info)
+        i = next_i

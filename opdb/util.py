@@ -1,12 +1,12 @@
+import dis
 import marshal
 import opcode
 import sys
-from log import logger
+from opdb.lib.pyc import file_header_length
+from opdb.log import logger
 
-from lib.pyc import file_header_length
-
-EXTENDED_ARG3 = 0
 EXTENDED_ARG27 = 0
+EXTENDED_ARG3 = 0
 
 
 def load_code_object(filename):
@@ -34,7 +34,7 @@ def _load_op_arg38(op, code, i):
     global EXTENDED_ARG3
     if op >= opcode.HAVE_ARGUMENT:
         arg = code[i + 1] | EXTENDED_ARG3
-        extended_arg = (arg << 8) if op == opcode.EXTENDED_ARG else 0
+        EXTENDED_ARG3 = (arg << 8) if op == opcode.EXTENDED_ARG else 0
     else:
         arg = None
     return arg, i + 2
@@ -45,7 +45,7 @@ def _load_op_arg27(op, code, i):
     global EXTENDED_ARG27
     if op >= opcode.HAVE_ARGUMENT:
         oparg = ord(code[i]) + ord(code[i + 1]) * 256 + EXTENDED_ARG27
-        extended_arg = oparg * 65536 if op == opcode.EXTENDED_ARG else 0
+        EXTENDED_ARG27 = oparg * 65536 if op == opcode.EXTENDED_ARG else 0
         i += 2
     else:
         oparg = None
