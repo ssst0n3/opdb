@@ -46,8 +46,8 @@ class OPdb(Pdb):
             self.do_stack(arg)
             op = util.load_op(code, lasti)
             _, lasti_end = util.load_op_arg(op, code, lasti)
-            logger.info("[predict]")
-            disassemble_string(code[lasti_end:lasti_end + 2], lasti_end, varnames, names, constants)
+            # logger.info("[predict]")
+            # disassemble_string(code[lasti_end:lasti_end + 2], lasti_end, varnames, names, constants)
             if op < opcode.HAVE_ARGUMENT:
                 disassemble_string(code[lasti:lasti_end], lasti, varnames, names, constants)
                 Pdb.do_step(self, arg)
@@ -60,7 +60,7 @@ class OPdb(Pdb):
                         self._set_stopinfo(self.curframe, self.curframe, -1)
                         return 1
                 elif op == opcode.opmap['FOR_ITER']:
-                    print('[debug] ??????????')
+                    # print('[debug] ??????????')
                     disassemble_string(code[lasti:lasti_end], lasti, varnames, names, constants)
                     target = deobfuscator.bypass_for_iter(code, lasti)
                     self.clear_all_breaks()
@@ -83,6 +83,7 @@ class OPdb(Pdb):
             logger.debug('return but not get stack')
             return
         for i in range(size):
+            # logger.info("[stack] {}".format(pystack.getStackItem(self.curframe, i)))
             stack.append(pystack.getStackItem(self.curframe, i))
         logger.info("[stack] {}".format(stack))
 

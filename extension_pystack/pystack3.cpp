@@ -24,7 +24,6 @@ static PyObject* getStackItem(PyObject *self, PyObject *args)
 	PyFrameObject* frame;
 	PyObject **stack_pointer;
 	int itemindex;
-
     if (!PyArg_ParseTuple(args, "Oi", &frame, &itemindex))
 	{
 		PyErr_SetString(PyExc_TypeError, "Arguement to getStackItem must be frame object and an integer index.");
@@ -35,12 +34,16 @@ static PyObject* getStackItem(PyObject *self, PyObject *args)
 
     if (itemindex < 0 || itemindex >= stacksize)
 	{
-		// Invalid index
+	    // Invalid index
 		Py_RETURN_NONE;
 	}
 
 	PyObject *ob = stack_pointer[-(itemindex+1)];
-	Py_INCREF(ob);
+	if (ob) {
+    	Py_INCREF(ob);
+	} else {
+		Py_RETURN_NONE;
+	}
 	return ob;
 }
 

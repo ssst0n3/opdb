@@ -98,7 +98,7 @@ def bypass(frame):
 
 
 def bypass_for_iter(code, i):
-    op = ord(code[i])
+    op = util.load_op(code, i)
     oparg, next_i = util.load_op_arg(op, code, i)
     target = next_i + oparg
     logger.info(target)
