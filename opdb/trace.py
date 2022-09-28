@@ -73,7 +73,8 @@ def run(filename):
     code_object = load_code_object(filename)
     FILENAME = code_object.co_filename
     sys.settrace(trace)
-    # code_object = lnotab.lnotab_all(code_object)
+    code_object = lnotab.lnotab_all(code_object)
+    # print(code_object.co_)
     exec(code_object, globals(), locals())
 
 
