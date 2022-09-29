@@ -1,6 +1,7 @@
 import opcode
 import sys
 import types
+import copy
 
 from opdb import db
 from opdb.lib import lnotab
@@ -78,26 +79,43 @@ class Patcher(Tracer):
         while i < len(co_code):
             op = db.util.load_op(co_code, i)
             _, next_i = db.util.load_op_arg(op, co_code, i)
-            if opcode.opname[op] in ['DUP_TOP']:
-                print("DUP_TOP found")
+            if opcode.opname[op] in ['DUP_TOP', 'POP_BLOCK']:
+                print("DUP_TOP/POP_BLOCK found")
                 j = i - 1
                 while co_code[j] < len(opcode.opname) and opcode.opname[co_code[j]] == 'NOP':
-                    print("fix NOP before DUP_TOP")
+                    print("fix NOP before DUP_TOP {} {}=>{}".format(j, co_code[j], old_code_object.co_code[j]))
                     co_code = co_code[:j] + old_code_object.co_code[j:j + 1] + co_code[j + 1:]
-                    new_code_object = lnotab.new_code(new_code_object, code=co_code)
                     j -= 1
+                new_code_object = lnotab.new_code(new_code_object, code=co_code)
+            i = next_i
+        return new_code_object
+
+    @classmethod
+    def fix_finally(cls, old_code_object, new_code_object):
+        i = 0
+        co_code = new_code_object.co_code
+        old_co_code = old_code_object.co_code
+        while i < len(old_co_code):
+            op = db.util.load_op(old_co_code, i)
+            _, next_i = db.util.load_op_arg(op, old_co_code, i)
+            if opcode.opname[op] in ['END_FINALLY'] and opcode.opname[co_code[i]] == 'NOP':
+                print("fix END_FINALLY", i)
+                co_code = co_code[:i] + old_co_code[i:next_i] + co_code[next_i:]
+                new_code_object = lnotab.new_code(new_code_object, code=co_code)
             i = next_i
         return new_code_object
 
     def do_patch(self, code_object):
         co_code = b'\x09' * len(code_object.co_code)
-        new_code_object = code_object
+        new_code_object = code_object.replace(co_code=co_code)
         for i, code in self.codes[co_id(code_object)].items():
-            co_code = co_code[:i] + code + co_code[i + len(code):]
-            new_code_object = lnotab.new_code(code_object, code=co_code)
+            if i >= 0:
+                co_code = co_code[:i] + code + co_code[i + len(code):]
+                new_code_object = new_code_object.replace(co_code=co_code)
         new_code_object = self.patch_jump_nop(new_code_object)
         new_code_object = self.fix_extend_arg(code_object, new_code_object)
         new_code_object = self.fix_exception(code_object, new_code_object)
+        new_code_object = self.fix_finally(code_object, new_code_object)
         return new_code_object
 
     def patch(self, code_object=None):
@@ -115,7 +133,6 @@ class Patcher(Tracer):
 
 
 def patch(filename):
-    patched_file = "{}_patched.pyc".format(filename)
     patcher = Patcher()
     try:
         patcher.run(filename, None, None)
@@ -123,6 +140,8 @@ def patch(filename):
         print("exiting")
     patched = patcher.patch()
     import marshal
+    patched_file = "{}_patched.pyc".format(filename)
+    print("patched_file:", patched_file)
     with open(patched_file, "wb") as pf:
         with open(filename, "rb") as of:
             pf.write(of.read()[:16] + marshal.dumps(patched))

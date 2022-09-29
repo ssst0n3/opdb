@@ -28,8 +28,8 @@ class Tracer:
 
     def run(self, filename, globals, locals):
         code_object = load_code_object(filename)
-        code_object = lnotab.lnotab_all(code_object)
         self.code_object = code_object
+        code_object = lnotab.lnotab_all(code_object)
         self.filename = code_object.co_filename
         sys.settrace(self.trace)
         if globals is None:
