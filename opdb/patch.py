@@ -115,7 +115,7 @@ class Patcher(Tracer):
 
 
 def patch(filename):
-    patched_file = "{}_patched".format(filename)
+    patched_file = "{}_patched.pyc".format(filename)
     patcher = Patcher()
     try:
         patcher.run(filename, None, None)
