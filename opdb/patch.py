@@ -123,8 +123,9 @@ def patch(filename):
         print("exiting")
     patched = patcher.patch()
     import marshal
-    with open(patched_file, "wb") as f:
-        f.write(open(filename, "rb").read()[:16] + marshal.dumps(patched))
+    with open(patched_file, "wb") as pf:
+        with open(filename, "rb") as of:
+            pf.write(of.read()[:16] + marshal.dumps(patched))
     return patched_file
 
 
