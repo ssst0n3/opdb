@@ -12,19 +12,8 @@ class Tracer:
         self.code_object = None
 
     def trace(self, frame, event, arg):
-        # print(frame, event, arg)
         if self.filename == frame.f_code.co_filename:
             return self.dispatch_all(frame)
-        #
-        # if self.last == frame.f_lasti:
-        #     return self.trace
-        # self.last = frame.f_lasti
-        # if self.filename == frame.f_code.co_filename:
-        #     # if frame.f_code.co_name == '<module>':
-        #     #     return self.trace
-        #     print(frame.f_code.co_name)
-        #     return self.dispatch_all(frame)
-        # return self.trace
 
     def dispatch_all(self, frame):
         lasti = frame.f_lasti
