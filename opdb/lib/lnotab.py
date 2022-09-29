@@ -73,10 +73,12 @@ def new_lnotab(co):
 
 # noinspection SpellCheckingInspection
 def lnotab_all(co):
+    co = new_lnotab(co)
     new_consts = []
     for const in co.co_consts:
         if isinstance(const, types.CodeType):
-            new_consts.append(new_lnotab(const))
+            const = lnotab_all(const)
+            new_consts.append(const)
         else:
             new_consts.append(const)
     return new_lnotab(new_code(co, consts=tuple(new_consts)))
