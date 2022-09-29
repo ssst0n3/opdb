@@ -3,3 +3,5 @@ venv_*
 __pycache__
 .idea
 build
+opdb.tar.gz
+pystack.tar.gz
