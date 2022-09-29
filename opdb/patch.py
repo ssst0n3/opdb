@@ -115,6 +115,7 @@ class Patcher(Tracer):
 
 
 def patch(filename):
+    patched_file = "{}_patched".format(filename)
     patcher = Patcher()
     try:
         patcher.run(filename, None, None)
@@ -122,8 +123,9 @@ def patch(filename):
         print("exiting")
     patched = patcher.patch()
     import marshal
-    with open("{}_patched.pyc".format(filename), "wb") as f:
+    with open(patched_file, "wb") as f:
         f.write(open(filename, "rb").read()[:16] + marshal.dumps(patched))
+    return patched_file
 
 
 if __name__ == '__main__':
