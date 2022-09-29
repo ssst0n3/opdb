@@ -121,15 +121,10 @@ def main():
         patcher.run(filename, None, None)
     except SystemExit:
         print("exiting")
-    # finally:
-    # print("code:", patcher.codes.keys())
-    # print("code:", patcher.codes['<module>'])
     patched = patcher.patch()
     import marshal
-    with open("patcher_patched.pyc", "wb") as f:
+    with open("{}_patched.pyc".format(filename), "wb") as f:
         f.write(open(filename, "rb").read()[:16] + marshal.dumps(patched))
-    # import dis
-    # dis.disassemble(patched.co_consts[6].co_consts[-3])
 
 
 if __name__ == '__main__':
