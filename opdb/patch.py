@@ -114,8 +114,7 @@ class Patcher(Tracer):
         return code_object
 
 
-def main():
-    filename = sys.argv[1]
+def patch(filename):
     patcher = Patcher()
     try:
         patcher.run(filename, None, None)
@@ -128,4 +127,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    patch(sys.argv[1])
