@@ -5,7 +5,7 @@ from opdb.util import load_code_object
 from opdb.lib import lnotab
 
 
-class Tracer:
+class Tracer(object):
     def __init__(self):
         self.last = -1
         self.filename = ''

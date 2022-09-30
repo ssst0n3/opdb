@@ -11,7 +11,7 @@ with open("README.md", "r") as f:
 
 setup(
     name='opdb',
-    version='0.1',
+    version='0.1.1',
     description='opcode level python debugger',
     long_description=readme,
     long_description_content_type="text/markdown",

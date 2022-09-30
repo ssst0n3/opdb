@@ -18,7 +18,7 @@ def co_id(co):
 
 class Patcher(Tracer):
     def __init__(self):
-        super().__init__()
+        super(Patcher, self).__init__()
         self.codes = {}
 
     def dispatch_all(self, frame):
