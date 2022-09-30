@@ -10,7 +10,7 @@ opcode level debugger for python
 
 ```
 from opdb.debug import debug
-debug.debug('sample.cpython-38.pyc')
+debug('sample.cpython-38.pyc')
 ```
 
 OR
@@ -60,7 +60,7 @@ $ python debug.py sample.cpython-38.pyc
 
 ```
 from opdb.trace import trace
-trace.trace('sample.cpython-38.pyc')
+trace('sample.cpython-38.pyc')
 ```
 
 OR 
