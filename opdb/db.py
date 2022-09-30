@@ -78,9 +78,15 @@ class OPdb(Pdb):
     def do_stack(self, arg):
         stack = []
         size = pystack.getStackSize(self.curframe)
-        logger.debug("size: {}".format(size))
+        logger.debug("size: {} {}".format(size, self.curframe.f_code.co_stacksize))
         if '__return__' in self.curframe.f_locals:
-            logger.debug('return but not get stack')
+            logger.info('return so do not read stack')
+            return
+        if '__exception__' in self.curframe.f_locals:
+            logger.info('exception {} so do not read stack'.format(self.curframe.f_locals['__exception__']))
+            return
+        if size > self.curframe.f_code.co_stacksize:
+            logger.warn('size bigger than stacksize {} {}'.format(size, self.curframe.f_code.co_stacksize))
             return
         for i in range(size):
             # logger.info("[stack] {}".format(pystack.getStackItem(self.curframe, i)))

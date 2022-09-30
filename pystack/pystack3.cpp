@@ -16,6 +16,7 @@ static PyObject* getStackSize(PyObject *self, PyObject *args)
 	frame = (PyFrameObject*) args;
 	stack_pointer = frame->f_stacktop;
 	int stacksize = ((int)(stack_pointer - frame->f_valuestack));
+//	int stacksize = ((int)(stack_pointer));
 	return PyLong_FromLong(stacksize);
 }
 
@@ -26,18 +27,22 @@ static PyObject* getStackItem(PyObject *self, PyObject *args)
 	int itemindex;
     if (!PyArg_ParseTuple(args, "Oi", &frame, &itemindex))
 	{
-		PyErr_SetString(PyExc_TypeError, "Arguement to getStackItem must be frame object and an integer index.");
+		PyErr_SetString(PyExc_TypeError, "Argument to getStackItem must be frame object and an integer index.");
         return NULL;
 	}
 	stack_pointer = frame->f_stacktop;
-	int stacksize = ((int)(stack_pointer - frame->f_valuestack));
-
-    if (itemindex < 0 || itemindex >= stacksize)
-	{
-	    // Invalid index
-		Py_RETURN_NONE;
+	if (stack_pointer == NULL) {
+		PyErr_SetString(PyExc_TypeError, "frame does not exist");
+        return NULL;
 	}
 
+	int stacksize = ((int)(stack_pointer - frame->f_valuestack));
+    if (itemindex < 0 || itemindex >= stacksize )
+	{
+		PyErr_SetString(PyExc_TypeError, "Invalid index");
+        return NULL;
+//		Py_RETURN_NONE;
+	}
 	PyObject *ob = stack_pointer[-(itemindex+1)];
 	if (ob) {
     	Py_INCREF(ob);
