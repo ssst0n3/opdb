@@ -40,10 +40,9 @@ class Tracer:
         exec(code_object, globals, locals)
 
 
-def main():
-    filename = sys.argv[1]
+def trace(filename):
     Tracer().run(filename, None, None)
 
 
 if __name__ == '__main__':
-    main()
+    trace(sys.argv[1])
