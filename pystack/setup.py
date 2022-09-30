@@ -7,6 +7,6 @@ else:
     module = Extension('pystack', sources=['pystack3.cpp'])
 
 setup(name='pystack',
-      version='1.0',
+      version='0.1',
       description='pystack',
       ext_modules=[module])
