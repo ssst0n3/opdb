@@ -16,7 +16,6 @@ static PyObject* getStackSize(PyObject *self, PyObject *args)
 	frame = (PyFrameObject*) args;
 	stack_pointer = frame->f_stacktop;
 	int stacksize = ((int)(stack_pointer - frame->f_valuestack));
-//	int stacksize = ((int)(stack_pointer));
 	return PyLong_FromLong(stacksize);
 }
 

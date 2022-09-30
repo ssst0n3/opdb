@@ -5,3 +5,6 @@ __pycache__
 build
 opdb.tar.gz
 pystack.tar.gz
+dist
+MANIFEST
+opdb.egg-info
