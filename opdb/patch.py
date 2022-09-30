@@ -107,11 +107,13 @@ class Patcher(Tracer):
 
     def do_patch(self, code_object):
         co_code = b'\x09' * len(code_object.co_code)
-        new_code_object = code_object.replace(co_code=co_code)
+        # new_code_object = code_object.replace(co_code=co_code)
+        new_code_object = lnotab.new_code(code_object, code=co_code)
         for i, code in self.codes[co_id(code_object)].items():
             if i >= 0:
                 co_code = co_code[:i] + code + co_code[i + len(code):]
-                new_code_object = new_code_object.replace(co_code=co_code)
+                # new_code_object = new_code_object.replace(co_code=co_code)
+                new_code_object = lnotab.new_code(new_code_object, code=co_code)
         new_code_object = self.patch_jump_nop(new_code_object)
         new_code_object = self.fix_extend_arg(code_object, new_code_object)
         new_code_object = self.fix_exception(code_object, new_code_object)
