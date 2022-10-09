@@ -1,11 +1,12 @@
 import opcode
 import sys
+import hashlib
 import types
-import copy
 
-from opdb import db
-from opdb.lib import lnotab
-from opdb.trace import Tracer
+import db
+from lib import lnotab
+from lib.pyc import file_header_length
+from tracer import Tracer
 
 FILENAME = ''
 LAST = -1
@@ -13,7 +14,8 @@ LAST = -1
 
 def co_id(co):
     assert isinstance(co, types.CodeType)
-    return co.co_code
+    key = hashlib.md5(co.co_code).hexdigest()
+    return key
 
 
 class Patcher(Tracer):
@@ -50,6 +52,55 @@ class Patcher(Tracer):
             if opcode.opname[op] in ['JUMP_FORWARD']:
                 jump = True
                 jump_from = (i, next_i)
+            i = next_i
+        return code_object
+
+    @classmethod
+    def patch_pop_jump(cls, code_object):
+        """
+        replace POP_JUMP_IF_FALSE to POP if the target is nop
+        """
+        i = 0
+        co_code = code_object.co_code
+        while i < len(co_code):
+            op = db.util.load_op(co_code, i)
+            arg, next_i = db.util.load_op_arg(op, co_code, i)
+            if opcode.opname[op] in ['POP_JUMP_IF_FALSE']:
+                target_op = db.util.load_op(co_code, arg)
+                if opcode.opname[target_op] == 'NOP':
+                    print("patch pop_jump")
+                    co_code = co_code[:i] + chr(opcode.opmap['POP_TOP']) + b"\x09"*(next_i-i-1) + co_code[next_i:]
+                    code_object = lnotab.new_code(code_object, code=co_code)
+            i = next_i
+        return code_object
+
+    @classmethod
+    def patch_pop_jump_nop(cls, code_object):
+        """
+        replace POP_JUMP_IF_FALSE to POP if the code before target is nop
+
+            POP_JUMP_IF_FALSE <TARGET>
+            NOP
+            NOP
+            NOP
+            <TARGET>
+        ====>
+            POP
+            NOP
+            NOP
+            NOP
+            <TARGET>
+        """
+        i = 0
+        co_code = code_object.co_code
+        while i < len(co_code):
+            op = db.util.load_op(co_code, i)
+            arg, next_i = db.util.load_op_arg(op, co_code, i)
+            if opcode.opname[op] in ['POP_JUMP_IF_FALSE']:
+                if co_code[next_i:arg] == (arg-next_i)*b'\x09':
+                    print("patch pop_jump_nop")
+                    co_code = co_code[:i] + chr(opcode.opmap['POP_TOP']) + b"\x09"*(next_i-i-1) + co_code[next_i:]
+                    code_object = lnotab.new_code(code_object, code=co_code)
             i = next_i
         return code_object
 
@@ -109,12 +160,16 @@ class Patcher(Tracer):
         co_code = b'\x09' * len(code_object.co_code)
         # new_code_object = code_object.replace(co_code=co_code)
         new_code_object = lnotab.new_code(code_object, code=co_code)
+        if co_id(code_object) not in self.codes:
+            return None
         for i, code in self.codes[co_id(code_object)].items():
             if i >= 0:
                 co_code = co_code[:i] + code + co_code[i + len(code):]
                 # new_code_object = new_code_object.replace(co_code=co_code)
                 new_code_object = lnotab.new_code(new_code_object, code=co_code)
         new_code_object = self.patch_jump_nop(new_code_object)
+        new_code_object = self.patch_pop_jump(new_code_object)
+        new_code_object = self.patch_pop_jump_nop(new_code_object)
         new_code_object = self.fix_extend_arg(code_object, new_code_object)
         new_code_object = self.fix_exception(code_object, new_code_object)
         new_code_object = self.fix_finally(code_object, new_code_object)
@@ -124,7 +179,9 @@ class Patcher(Tracer):
         if code_object is None:
             code_object = self.code_object
         print("patch:", code_object)
-        code_object = self.do_patch(code_object)
+        patched = self.do_patch(code_object)
+        if patched is not None:
+            code_object = patched
         for i in range(len(code_object.co_consts)):
             const = code_object.co_consts[i]
             if isinstance(const, types.CodeType):
@@ -134,10 +191,10 @@ class Patcher(Tracer):
         return code_object
 
 
-def patch(filename):
+def patch(filename, globals=None, locals=None):
     patcher = Patcher()
     try:
-        patcher.run(filename, None, None)
+        patcher.run(filename, globals, locals)
     except SystemExit:
         print("exiting")
     patched = patcher.patch()
@@ -146,7 +203,7 @@ def patch(filename):
     print("patched_file:", patched_file)
     with open(patched_file, "wb") as pf:
         with open(filename, "rb") as of:
-            pf.write(of.read()[:16] + marshal.dumps(patched))
+            pf.write(of.read()[:file_header_length()] + marshal.dumps(patched))
     return patched_file
 
 

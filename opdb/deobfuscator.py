@@ -1,6 +1,6 @@
 import opcode
-from opdb import util
-from opdb.log import logger
+import util
+from log import logger
 
 JUMP = [opcode.opmap['JUMP_ABSOLUTE'], opcode.opmap['JUMP_FORWARD']]
 POP_JUMP = [opcode.opmap['POP_JUMP_IF_TRUE'], opcode.opmap['POP_JUMP_IF_FALSE']]

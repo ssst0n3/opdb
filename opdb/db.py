@@ -4,11 +4,11 @@ import opcode
 from dis import opname, HAVE_ARGUMENT, hasconst, hasname, hasjrel, haslocal, hascompare, cmp_op
 from pdb import Pdb
 import pystack
-from opdb.log import logger
+from log import logger
 
-from opdb import deobfuscator
-from opdb import util
-from opdb.lib.lnotab import lnotab_all
+import deobfuscator
+import util
+from lib.lnotab import lnotab_all
 
 
 # noinspection PyShadowingBuiltins

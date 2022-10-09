@@ -9,7 +9,7 @@ opcode level debugger for python
 ## debug
 
 ```
-from opdb.debug import debug
+from opdb.debugger import debug
 debug('sample.cpython-38.pyc')
 ```
 
@@ -59,7 +59,7 @@ $ python debug.py sample.cpython-38.pyc
 ## trace
 
 ```
-from opdb.trace import trace
+from opdb.tracer import trace
 trace('sample.cpython-38.pyc')
 ```
 
@@ -86,7 +86,7 @@ $ python trace.py sample.cpython-38.pyc
 Patch unreachable code to 'NOP' automatically.
 
 ```
-from opdb.patch import patch
+from opdb.patcher import patch
 patched = patch('sample.cpython-38.pyc')
 decompile(patched)
 ```

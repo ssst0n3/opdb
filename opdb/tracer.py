@@ -1,8 +1,8 @@
 import sys
 
-from opdb import db
-from opdb.util import load_code_object
-from opdb.lib import lnotab
+import db
+from util import load_code_object
+from lib import lnotab
 
 
 class Tracer(object):

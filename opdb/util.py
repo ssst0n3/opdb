@@ -2,8 +2,8 @@ import dis
 import marshal
 import opcode
 import sys
-from opdb.lib.pyc import file_header_length
-from opdb.log import logger
+from lib.pyc import file_header_length
+from log import logger
 
 EXTENDED_ARG27 = 0
 EXTENDED_ARG3 = 0
